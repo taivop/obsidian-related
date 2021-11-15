@@ -54,6 +54,19 @@ def read_root():
     return {"scripts": [f"http://127.0.0.1:5000/function/{fn}" for fn in available_fns]}
 
 
+def _row_to_dict(row):
+    res = {}
+    for k, v in row.items():
+        if k == "name":
+            continue
+        if np.isinf(v) or np.isnan(v):
+            res[k] = None
+        else:
+            res[k] = v
+
+    return res
+
+
 def _df_to_items(df: pd.DataFrame, score_getter):
     items = []
 
@@ -62,7 +75,7 @@ def _df_to_items(df: pd.DataFrame, score_getter):
             {
                 "path": f'{row["name"]}.md',
                 "name": row["name"],
-                "info": {"score": score_getter(row)},
+                "info": {"score": score_getter(row), "features": _row_to_dict(row)},
             }
         )
 
@@ -82,7 +95,9 @@ def get_items_jaccard(query_note, n_items=10):
 def _features_merged(query_note, graph):
     jaccard_df = obsfeatures.jaccard_coefficients(query_note, graph)
     note_individual_features = obsfeatures.get_notes_individual_df(notes, vault)
+    geodesic_distances = obsfeatures.geodesic_distances(query_note, vault.graph)
     df = jaccard_df.merge(note_individual_features, on="name", how="left")
+    df = df.merge(geodesic_distances, on="name", how="left")
 
     return df
 
@@ -91,15 +106,17 @@ def get_items_jaccard_short(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] <= 2]
+    result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
-    return _df_to_items(result_df, lambda row: row.jaccard)
+    return _df_to_items(result_df, lambda row: row.distance)
 
 
 def get_items_jaccard_long(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] > 2]
+    result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -108,6 +125,7 @@ def get_items_jaccard_long(feature_df, n_items=5):
 def get_items_jaccard_daily(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == True]
+    result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -118,17 +136,10 @@ def get_items_jaccard_nonexistent(feature_df, n_items=5):
     result_df = result_df[
         result_df["exists"] != True
     ]  # for nonexistent notes it will be None/nan, not False
+    result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
-
-
-def get_items_geodesic(query_note, n_items=10):
-    result_df = obsfeatures.geodesic_distances(query_note, vault.graph)
-    result_df = result_df[result_df["distance"] >= 2]
-    result_df = result_df.head(n_items)
-
-    return _df_to_items(result_df, lambda row: row.distance)
 
 
 def title_item(title: str) -> dict:

@@ -2,3 +2,5 @@ obsidiantools
 networkx
 numpy
 pandas
+fastapi
+uvicorn[standard]

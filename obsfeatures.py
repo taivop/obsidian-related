@@ -72,19 +72,20 @@ def plaintext_n_words(note: Note) -> int:
 
 
 # === Function of graph and note ===
-def geodesic_distances(note: Note, graph: nx.Graph) -> pd.DataFrame:
+def geodesic_distances(note: Note, graph: nx.MultiDiGraph) -> pd.DataFrame:
     """Get geodesic distances from note to all other notes."""
-    all_shortest_paths = nx.single_source_shortest_path_length(graph, source=note.name)
+    g = nx.Graph(graph)  # convert to undirected graph
+    all_shortest_paths = nx.single_source_shortest_path_length(g, source=note.name)
 
     rows = []
 
-    for name in graph.nodes:
+    for name in g.nodes:
         rows.append({"name": name, "distance": all_shortest_paths.get(name, np.inf)})
 
     return pd.DataFrame(rows).sort_values("distance")
 
 
-def jaccard_coefficients(note: Note, graph: nx.Graph) -> pd.DataFrame:
+def jaccard_coefficients(note: Note, graph: nx.MultiDiGraph) -> pd.DataFrame:
     """Get jaccard coefficients from note to all other notes."""
     g = nx.Graph(graph)  # convert to undirected graph
     # TODO this is wasteful because the jaccard coefficients don't have to be recalculated for every query
