@@ -1,0 +1,4 @@
+obsidiantools
+networkx
+numpy
+pandas
