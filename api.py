@@ -176,11 +176,12 @@ def related(request: ObsidianPyLabRequest):
     items = []
 
     feature_df = _features_merged(query_note, vault.graph)
-    items.append(title_item("Short"))
-    items += get_items_jaccard_short(feature_df, n_items=8)
 
     items.append(title_item("Long"))
     items += get_items_jaccard_long(feature_df, n_items=8)
+
+    items.append(title_item("Short"))
+    items += get_items_jaccard_short(feature_df, n_items=8)
 
     items.append(title_item("Daily"))
     items += get_items_jaccard_daily(feature_df)
