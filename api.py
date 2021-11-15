@@ -81,8 +81,8 @@ def get_items_jaccard(query_note, n_items=10):
 
 def _features_merged(query_note, graph):
     jaccard_df = obsfeatures.jaccard_coefficients(query_note, graph)
-    note_individual_features = obsfeatures.get_notes_individual_df(notes)
-    df = jaccard_df.merge(note_individual_features, on="name")
+    note_individual_features = obsfeatures.get_notes_individual_df(notes, vault)
+    df = jaccard_df.merge(note_individual_features, on="name", how="left")
 
     return df
 
@@ -113,6 +113,16 @@ def get_items_jaccard_daily(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
+def get_items_jaccard_nonexistent(feature_df, n_items=5):
+    result_df = feature_df
+    result_df = result_df[
+        result_df["exists"] != True
+    ]  # for nonexistent notes it will be None/nan, not False
+    result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
+
+    return _df_to_items(result_df, lambda row: row.jaccard)
+
+
 def get_items_geodesic(query_note, n_items=10):
     result_df = obsfeatures.geodesic_distances(query_note, vault.graph)
     result_df = result_df[result_df["distance"] >= 2]
@@ -122,7 +132,7 @@ def get_items_geodesic(query_note, n_items=10):
 
 
 def title_item(title: str) -> dict:
-    return {"name": f"🟦🟦🟦🟦🟦 {title} 🟦🟦🟦🟦🟦"}
+    return {"name": f"🟦 {title} 🟦"}
 
 
 def get_note_by_name(name: str) -> obsfeatures.Note:
@@ -157,5 +167,8 @@ def related(request: ObsidianPyLabRequest):
 
     items.append(title_item("Daily"))
     items += get_items_jaccard_daily(feature_df)
+
+    items.append(title_item("Nonexistent"))
+    items += get_items_jaccard_nonexistent(feature_df)
 
     return {"contents": items}

@@ -27,12 +27,12 @@ class Note:
         return Note(name, path, md, plaintext)
 
 
-def get_notes_individual_df(notes: List[Note]) -> pd.DataFrame:
+def get_notes_individual_df(notes: List[Note], vault) -> pd.DataFrame:
     """Get individual features for a list of notes."""
-    return pd.DataFrame([get_note_individual_features(n) for n in notes])
+    return pd.DataFrame([get_note_individual_features(n, vault) for n in notes])
 
 
-def get_note_individual_features(note: Note) -> dict:
+def get_note_individual_features(note: Note, vault) -> dict:
     """Get features for a single note."""
     return {
         "name": note.name,
@@ -41,6 +41,7 @@ def get_note_individual_features(note: Note) -> dict:
         "plaintext_n_char": plaintext_n_char(note),
         "plaintext_n_words": plaintext_n_words(note),
         "is_daily": is_daily(note),
+        "exists": note.name not in vault.nonexistent_notes,
     }
 
 
