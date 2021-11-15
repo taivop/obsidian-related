@@ -31,6 +31,7 @@ This project is in a very early stage and I might make massively breaking change
 ### TODOs
 
 * [ ] NLP-based predictions
+* [ ] gitignore-like ignoring of specific files/patterns
 * [ ] Make obsidiantools ignore case
 * [ ] Handle if linked note is renamed => vault index needs update
 * [ ] Remove fixed/magic paths and numbers from the codebase and put them into env

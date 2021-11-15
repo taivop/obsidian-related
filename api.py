@@ -106,6 +106,7 @@ def get_items_jaccard_short(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] <= 2]
+    result_df = result_df[result_df["plaintext_n_words"] >= 10]
     result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
@@ -116,6 +117,7 @@ def get_items_jaccard_long(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] > 2]
+    result_df = result_df[result_df["plaintext_n_words"] >= 10]
     result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
@@ -134,7 +136,7 @@ def get_items_jaccard_daily(feature_df, n_items=5):
 def get_items_jaccard_nonexistent(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[
-        result_df["exists"] != True
+        np.logical_or(result_df["exists"] != True, result_df["plaintext_n_words"] < 10)
     ]  # for nonexistent notes it will be None/nan, not False
     result_df = result_df[result_df["distance"] >= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
