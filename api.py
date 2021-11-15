@@ -108,9 +108,10 @@ def get_items_jaccard_short(feature_df, n_items=5):
     result_df = result_df[result_df["name_n_words"] <= 2]
     result_df = result_df[result_df["plaintext_n_words"] >= 10]
     result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df[result_df["jaccard"] > 0.0]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
-    return _df_to_items(result_df, lambda row: row.distance)
+    return _df_to_items(result_df, lambda row: row.jaccard)
 
 
 def get_items_jaccard_long(feature_df, n_items=5):
@@ -119,6 +120,7 @@ def get_items_jaccard_long(feature_df, n_items=5):
     result_df = result_df[result_df["name_n_words"] > 2]
     result_df = result_df[result_df["plaintext_n_words"] >= 10]
     result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df[result_df["jaccard"] > 0.0]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -128,6 +130,7 @@ def get_items_jaccard_daily(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == True]
     result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df[result_df["jaccard"] > 0.0]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -139,6 +142,7 @@ def get_items_jaccard_nonexistent(feature_df, n_items=5):
         np.logical_or(result_df["exists"] != True, result_df["plaintext_n_words"] < 10)
     ]  # for nonexistent notes it will be None/nan, not False
     result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df[result_df["jaccard"] > 0.0]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -173,10 +177,10 @@ def related(request: ObsidianPyLabRequest):
 
     feature_df = _features_merged(query_note, vault.graph)
     items.append(title_item("Short"))
-    items += get_items_jaccard_short(feature_df)
+    items += get_items_jaccard_short(feature_df, n_items=8)
 
     items.append(title_item("Long"))
-    items += get_items_jaccard_long(feature_df)
+    items += get_items_jaccard_long(feature_df, n_items=8)
 
     items.append(title_item("Daily"))
     items += get_items_jaccard_daily(feature_df)
