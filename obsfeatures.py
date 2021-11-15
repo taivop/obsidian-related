@@ -9,7 +9,7 @@ import pandas as pd
 from networkx.algorithms.shortest_paths.generic import all_shortest_paths
 from obsidiantools.md_utils import _get_ascii_plaintext_from_md_file
 
-re_dailynote = re.compile(r"\d\d\d\d-\d\d-\d\d\.md")
+re_dailynote = re.compile(r"\d\d\d\d-\d\d-\d\d")
 
 
 @dataclass
