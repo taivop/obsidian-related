@@ -80,7 +80,7 @@ def geodesic_distances(note: Note, graph: nx.Graph) -> pd.DataFrame:
     for name in graph.nodes:
         rows.append({"name": name, "distance": all_shortest_paths.get(name, np.inf)})
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows).sort_values("distance")
 
 
 def jaccard_coefficients(note: Note, graph: nx.Graph) -> pd.DataFrame:

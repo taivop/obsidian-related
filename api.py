@@ -47,25 +47,15 @@ def read_root():
     return {"scripts": [f"http://127.0.0.1:5000/function/{fn}" for fn in available_fns]}
 
 
-@app.post("/similar")
-def similar(request: ObsidianPyLabRequest):
-    print(request)
-    # items = [{"path": f"Commitment.md", "name": "Commitment", "info": {"score": 0.25}}]
-
-    query_note_name = os.path.splitext(request.notePath)[0]
-    query_note = [n for n in notes if n.name == query_note_name][0]
-
-    print(query_note_name)
-    print(query_note)
+def get_items_jaccard(query_note, n_items=10):
     result_df = (
         obsfeatures.jaccard_coefficients(query_note, vault.graph)
         .sort_values("jaccard", ascending=False)
-        .head(20)
+        .head(n_items)
     )
-    # result_df = obsfeatures.geodesic_distances(query_note, vault.graph)
-    print(result_df.shape)
 
     items = []
+
     for _, row in result_df.iterrows():
         items.append(
             {
@@ -75,6 +65,43 @@ def similar(request: ObsidianPyLabRequest):
             }
         )
 
+    return items
+
+
+def get_items_geodesic(query_note, n_items=10):
+    result_df = obsfeatures.geodesic_distances(query_note, vault.graph)
+    result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df.head(n_items)
+
+    items = []
+
+    for _, row in result_df.iterrows():
+        items.append(
+            {
+                "path": f'{row["name"]}.md',
+                "name": row["name"],
+                "info": {"score": row.distance},
+            }
+        )
     print(items)
+
+    return items
+
+
+@app.post("/similar")
+def similar(request: ObsidianPyLabRequest):
+    print(request)
+    # items = [{"path": f"Commitment.md", "name": "Commitment", "info": {"score": 0.25}}]
+
+    query_note_name = os.path.splitext(request.notePath)[0]
+    query_note = [n for n in notes if n.name == query_note_name][0]
+
+    items = []
+
+    items.append({"name": "=== JACCARD ==="})
+    items += get_items_jaccard(query_note)
+
+    items.append({"name": "=== CLOSEST ==="})
+    items += get_items_geodesic(query_note)
 
     return {"contents": items}
