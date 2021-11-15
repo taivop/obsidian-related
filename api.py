@@ -31,17 +31,22 @@ app.add_middleware(
 )
 
 # Available endpoints
-available_fns = ["similar"]
+available_fns = ["related"]
 
 # Read vault and notes into memory
+def load_vault():
+    VAULT_PATH = "/Users/taivo/kb"
+    vault = otools.Vault(pathlib.Path(VAULT_PATH)).connect()
+    notes = [
+        obsfeatures.Note.from_path(name, VAULT_PATH / p)
+        for name, p in vault.file_index.items()
+    ]
+    print(f"{len(notes)} notes in vault")
 
-VAULT_PATH = "/Users/taivo/kb"
-vault = otools.Vault(pathlib.Path(VAULT_PATH)).connect()
-notes = [
-    obsfeatures.Note.from_path(name, VAULT_PATH / p)
-    for name, p in vault.file_index.items()
-]
-print(f"{len(notes)} notes in vault")
+    return vault, notes
+
+
+vault, notes = load_vault()
 
 
 @app.get("/")
@@ -84,9 +89,7 @@ def _features_merged(query_note, graph):
 
 def get_items_jaccard_short(feature_df, n_items=5):
     result_df = feature_df
-    print(result_df["is_daily"].dtype)
     result_df = result_df[result_df["is_daily"] == False]
-    print(result_df.head(5))
     result_df = result_df[result_df["name_n_words"] <= 2]
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
@@ -105,7 +108,6 @@ def get_items_jaccard_long(feature_df, n_items=5):
 def get_items_jaccard_daily(feature_df, n_items=5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == True]
-    print(result_df.shape)
     result_df = result_df.sort_values("jaccard", ascending=False).head(n_items)
 
     return _df_to_items(result_df, lambda row: row.jaccard)
@@ -123,11 +125,26 @@ def title_item(title: str) -> dict:
     return {"name": f"🟦🟦🟦🟦🟦 {title} 🟦🟦🟦🟦🟦"}
 
 
-@app.post("/similar")
-def similar(request: ObsidianPyLabRequest):
+def get_note_by_name(name: str) -> obsfeatures.Note:
+    global vault, notes
+    results = [n for n in notes if n.name == name]
+    if results:
+        return results[0]
+    else:
+        # Try reloading vault
+        vault, notes = load_vault()
+        results2 = [n for n in notes if n.name == name]
+        if results2:
+            return results2[0]
+        else:
+            raise ValueError(f"No note with name {name}")
+
+
+@app.post("/related")
+def related(request: ObsidianPyLabRequest):
 
     query_note_name = os.path.splitext(request.notePath)[0]
-    query_note = [n for n in notes if n.name == query_note_name][0]
+    query_note = get_note_by_name(query_note_name)
 
     items = []
 
