@@ -90,15 +90,11 @@ def geodesic_distances(note: Note, graph: nx.MultiDiGraph) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("distance")
 
 
-def jaccard_coefficients(note: Note, graph: nx.MultiDiGraph) -> pd.DataFrame:
+def jaccard_coefficients(note: Note, index: vault_index.VaultIndex) -> pd.DataFrame:
     """Get jaccard coefficients from note to all other notes."""
-    g = nx.Graph(graph)  # convert to undirected graph
-    # TODO this is wasteful because the jaccard coefficients don't have to be recalculated for every query
-    jaccard_coefficients = nx.jaccard_coefficient(g)
-
     rows = []
 
-    for n1, n2, jaccard in jaccard_coefficients:
+    for n1, n2, jaccard in index.jaccard_pairs:
         if n1 == note.name:
             rows.append({"name": n2, "jaccard": jaccard})
         elif n2 == note.name:

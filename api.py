@@ -82,18 +82,8 @@ def _df_to_items(df: pd.DataFrame, score_getter):
     return items
 
 
-def get_items_jaccard(query_note, n_items=10):
-    result_df = (
-        obsfeatures.jaccard_coefficients(query_note, index.vault.graph)
-        .sort_values("jaccard", ascending=False)
-        .head(n_items)
-    )
-
-    return _df_to_items(result_df, lambda row: row.jaccard)
-
-
-def _features_merged(query_note, graph):
-    jaccard_df = obsfeatures.jaccard_coefficients(query_note, graph)
+def _features_merged(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
+    jaccard_df = obsfeatures.jaccard_coefficients(query_note, index)
     note_individual_features = obsfeatures.get_notes_individual_df(index)
     geodesic_distances = obsfeatures.geodesic_distances(query_note, index.vault.graph)
     df = jaccard_df.merge(note_individual_features, on="name", how="left")
@@ -174,7 +164,7 @@ def related(request: ObsidianPyLabRequest):
 
     items = []
 
-    feature_df = _features_merged(query_note, index.vault.graph)
+    feature_df = _features_merged(query_note, index)
 
     items.append(title_item("Long"))
     items += get_items_jaccard_long(feature_df, n_items=8)
