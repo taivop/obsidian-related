@@ -30,7 +30,9 @@ This project is in a very early stage and I might make massively breaking change
 
 ### TODOs
 
+* [ ] Ability to force-reindex when predicting
 * [ ] NLP-based predictions
+* [ ] Profile and make faster (<0.5 seconds ideally)
 * [ ] gitignore-like ignoring of specific files/patterns
 * [ ] Make obsidiantools ignore case
 * [ ] Handle if linked note is renamed => vault index needs update

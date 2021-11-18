@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 # Available endpoints
-available_fns = ["related"]
+available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
 def load_vault():
@@ -165,6 +165,13 @@ def get_note_by_name(name: str) -> obsfeatures.Note:
             return results2[0]
         else:
             raise ValueError(f"No note with name {name}")
+
+
+@app.post("/reindex")
+def reindex(request: ObsidianPyLabRequest):
+    global vault, notes
+    vault, notes = load_vault()
+    return {"status": "ok"}
 
 
 @app.post("/related")
