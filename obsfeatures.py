@@ -1,33 +1,14 @@
 import os
 import re
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List
 
 import networkx as nx
 import numpy as np
 import pandas as pd
-from networkx.algorithms.shortest_paths.generic import all_shortest_paths
-from obsidiantools.md_utils import _get_ascii_plaintext_from_md_file
 
 import vault_index
+from note import Note
 
 re_dailynote = re.compile(os.getenv("DAILY_NOTE_REGEX") or r"\d\d\d\d-\d\d-\d\d")
-
-
-@dataclass
-class Note:
-    name: str
-    path: Path
-    md: str
-    plaintext: str
-
-    @staticmethod
-    def from_path(name: str, path: Path) -> "Note":
-        with path.open() as f:
-            md = f.read()
-            plaintext = _get_ascii_plaintext_from_md_file(path)
-        return Note(name, path, md, plaintext)
 
 
 def get_notes_individual_df(index: vault_index.VaultIndex) -> pd.DataFrame:

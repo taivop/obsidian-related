@@ -1,17 +1,15 @@
-import os
 import pathlib
 
 import networkx as nx
 import obsidiantools.api as otools
 
-import obsfeatures
+from note import Note
 
 
 def load_vault(vault_path: pathlib.Path):
     vault = otools.Vault(pathlib.Path(vault_path)).connect()
     notes = [
-        obsfeatures.Note.from_path(name, vault_path / p)
-        for name, p in vault.file_index.items()
+        Note.from_path(name, vault_path / p) for name, p in vault.file_index.items()
     ]
     print(f"{len(notes)} notes in vault")
 
@@ -36,7 +34,7 @@ class VaultIndex:
 
         # Notes to memory
         self.notes = {
-            name: obsfeatures.Note.from_path(name, self.vault_path / path)
+            name: Note.from_path(name, self.vault_path / path)
             for name, path in self.vault.file_index.items()
         }
 
