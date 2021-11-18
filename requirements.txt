@@ -4,3 +4,4 @@ numpy
 pandas
 fastapi
 uvicorn[standard]
+python-dotenv

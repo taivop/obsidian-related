@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 import obsidiantools.api as otools
 import pandas as pd
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,6 +18,9 @@ class ObsidianPyLabRequest(BaseModel):
     notePath: Optional[str] = None
     text: Optional[str] = None
 
+
+# Load .env
+load_dotenv()
 
 # Setup app
 app = FastAPI()
@@ -35,7 +39,7 @@ available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
 def load_vault():
-    VAULT_PATH = "/Users/taivo/kb"
+    VAULT_PATH = os.getenv("VAULT_PATH")
     vault = otools.Vault(pathlib.Path(VAULT_PATH)).connect()
     notes = [
         obsfeatures.Note.from_path(name, VAULT_PATH / p)

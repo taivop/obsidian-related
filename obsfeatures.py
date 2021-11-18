@@ -1,3 +1,4 @@
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,7 +10,7 @@ import pandas as pd
 from networkx.algorithms.shortest_paths.generic import all_shortest_paths
 from obsidiantools.md_utils import _get_ascii_plaintext_from_md_file
 
-re_dailynote = re.compile(r"\d\d\d\d-\d\d-\d\d")
+re_dailynote = re.compile(os.getenv("DAILY_NOTE_REGEX") or r"\d\d\d\d-\d\d-\d\d")
 
 
 @dataclass
