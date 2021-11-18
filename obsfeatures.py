@@ -2,13 +2,15 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 from networkx.algorithms.shortest_paths.generic import all_shortest_paths
 from obsidiantools.md_utils import _get_ascii_plaintext_from_md_file
+
+import vault_index
 
 re_dailynote = re.compile(os.getenv("DAILY_NOTE_REGEX") or r"\d\d\d\d-\d\d-\d\d")
 
@@ -28,9 +30,11 @@ class Note:
         return Note(name, path, md, plaintext)
 
 
-def get_notes_individual_df(notes: List[Note], vault) -> pd.DataFrame:
+def get_notes_individual_df(index: vault_index.VaultIndex) -> pd.DataFrame:
     """Get individual features for a list of notes."""
-    return pd.DataFrame([get_note_individual_features(n, vault) for n in notes])
+    return pd.DataFrame(
+        [get_note_individual_features(n, index.vault) for n in index.notes.values()]
+    )
 
 
 def get_note_individual_features(note: Note, vault) -> dict:

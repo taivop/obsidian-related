@@ -46,7 +46,7 @@ available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
 vault_path = pathlib.Path(os.getenv("VAULT_PATH"))
-vault, notes = vault_index.load_vault(vault_path)
+index = vault_index.VaultIndex(vault_path)
 
 
 @app.get("/")
@@ -84,7 +84,7 @@ def _df_to_items(df: pd.DataFrame, score_getter):
 
 def get_items_jaccard(query_note, n_items=10):
     result_df = (
-        obsfeatures.jaccard_coefficients(query_note, vault.graph)
+        obsfeatures.jaccard_coefficients(query_note, index.vault.graph)
         .sort_values("jaccard", ascending=False)
         .head(n_items)
     )
@@ -94,8 +94,8 @@ def get_items_jaccard(query_note, n_items=10):
 
 def _features_merged(query_note, graph):
     jaccard_df = obsfeatures.jaccard_coefficients(query_note, graph)
-    note_individual_features = obsfeatures.get_notes_individual_df(notes, vault)
-    geodesic_distances = obsfeatures.geodesic_distances(query_note, vault.graph)
+    note_individual_features = obsfeatures.get_notes_individual_df(index)
+    geodesic_distances = obsfeatures.geodesic_distances(query_note, index.vault.graph)
     df = jaccard_df.merge(note_individual_features, on="name", how="left")
     df = df.merge(geodesic_distances, on="name", how="left")
 
@@ -153,24 +153,16 @@ def title_item(title: str) -> dict:
 
 
 def get_note_by_name(name: str) -> obsfeatures.Note:
-    global vault, notes
-    results = [n for n in notes if n.name == name]
-    if results:
-        return results[0]
-    else:
+    if name not in index.notes:
         # Try reloading vault
-        vault, notes = vault_index.load_vault()
-        results2 = [n for n in notes if n.name == name]
-        if results2:
-            return results2[0]
-        else:
-            raise ValueError(f"No note with name {name}")
+        index.load()
+
+    return index.notes[name]
 
 
 @app.post("/reindex")
 def reindex(request: ObsidianPyLabRequest):
-    global vault, notes
-    vault, notes = vault_index.load_vault()
+    index.load()
     return {"status": "ok"}
 
 
@@ -182,7 +174,7 @@ def related(request: ObsidianPyLabRequest):
 
     items = []
 
-    feature_df = _features_merged(query_note, vault.graph)
+    feature_df = _features_merged(query_note, index.vault.graph)
 
     items.append(title_item("Long"))
     items += get_items_jaccard_long(feature_df, n_items=8)
