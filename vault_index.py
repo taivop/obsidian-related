@@ -24,6 +24,9 @@ class VaultIndex:
         self.vault_path = vault_path
         self.load()
 
+    def __repr__(self):
+        return f"VaultIndex at '{self.vault_path}', {len(self.notes)} notes"
+
     def load(self):
         """Read vault, metadata, notes and all indices into memory."""
         self.vault = otools.Vault(pathlib.Path(self.vault_path)).connect()
