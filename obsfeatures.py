@@ -77,14 +77,13 @@ def plaintext_n_words(note: Note) -> int:
 
 
 # === Function of graph and note ===
-def geodesic_distances(note: Note, graph: nx.MultiDiGraph) -> pd.DataFrame:
+def geodesic_distances(note: Note, graph: nx.Graph) -> pd.DataFrame:
     """Get geodesic distances from note to all other notes."""
-    g = nx.Graph(graph)  # convert to undirected graph
-    all_shortest_paths = nx.single_source_shortest_path_length(g, source=note.name)
+    all_shortest_paths = nx.single_source_shortest_path_length(graph, source=note.name)
 
     rows = []
 
-    for name in g.nodes:
+    for name in graph.nodes:
         rows.append({"name": name, "distance": all_shortest_paths.get(name, np.inf)})
 
     return pd.DataFrame(rows).sort_values("distance")
@@ -94,6 +93,7 @@ def jaccard_coefficients(note: Note, index: vault_index.VaultIndex) -> pd.DataFr
     """Get jaccard coefficients from note to all other notes."""
     rows = []
 
+    # TODO still wasteful because we go through all pairs at every query -- should move this logic to vault_index
     for n1, n2, jaccard in index.jaccard_pairs:
         if n1 == note.name:
             rows.append({"name": n2, "jaccard": jaccard})

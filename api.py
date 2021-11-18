@@ -9,7 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_utils.timing import add_timing_middleware, record_timing
+from fastapi_utils.timing import add_timing_middleware
 from pydantic import BaseModel
 
 import obsfeatures
@@ -85,7 +85,9 @@ def _df_to_items(df: pd.DataFrame, score_getter):
 def _features_merged(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
     jaccard_df = obsfeatures.jaccard_coefficients(query_note, index)
     note_individual_features = obsfeatures.get_notes_individual_df(index)
-    geodesic_distances = obsfeatures.geodesic_distances(query_note, index.vault.graph)
+    geodesic_distances = obsfeatures.geodesic_distances(
+        query_note, index.graph_undirected
+    )
     df = jaccard_df.merge(note_individual_features, on="name", how="left")
     df = df.merge(geodesic_distances, on="name", how="left")
 
