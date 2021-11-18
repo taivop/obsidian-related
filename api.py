@@ -13,6 +13,7 @@ from fastapi_utils.timing import add_timing_middleware, record_timing
 from pydantic import BaseModel
 
 import obsfeatures
+import vault_index
 
 
 class ObsidianPyLabRequest(BaseModel):
@@ -44,19 +45,8 @@ add_timing_middleware(app, record=logger.info, prefix="app", exclude="untimed")
 available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
-def load_vault():
-    VAULT_PATH = os.getenv("VAULT_PATH")
-    vault = otools.Vault(pathlib.Path(VAULT_PATH)).connect()
-    notes = [
-        obsfeatures.Note.from_path(name, VAULT_PATH / p)
-        for name, p in vault.file_index.items()
-    ]
-    print(f"{len(notes)} notes in vault")
-
-    return vault, notes
-
-
-vault, notes = load_vault()
+vault_path = pathlib.Path(os.getenv("VAULT_PATH"))
+vault, notes = vault_index.load_vault(vault_path)
 
 
 @app.get("/")
@@ -169,7 +159,7 @@ def get_note_by_name(name: str) -> obsfeatures.Note:
         return results[0]
     else:
         # Try reloading vault
-        vault, notes = load_vault()
+        vault, notes = vault_index.load_vault()
         results2 = [n for n in notes if n.name == name]
         if results2:
             return results2[0]
@@ -180,7 +170,7 @@ def get_note_by_name(name: str) -> obsfeatures.Note:
 @app.post("/reindex")
 def reindex(request: ObsidianPyLabRequest):
     global vault, notes
-    vault, notes = load_vault()
+    vault, notes = vault_index.load_vault()
     return {"status": "ok"}
 
 
