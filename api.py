@@ -1,3 +1,4 @@
+import logging
 import os
 import pathlib
 from typing import Optional
@@ -8,6 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_utils.timing import add_timing_middleware, record_timing
 from pydantic import BaseModel
 
 import obsfeatures
@@ -33,6 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+add_timing_middleware(app, record=logger.info, prefix="app", exclude="untimed")
 
 # Available endpoints
 available_fns = ["related", "reindex"]
