@@ -33,7 +33,7 @@ This project is in a very early stage and I might make massively breaking change
 * [x] Ability to force-reindex when predicting
 * [x] Remove fixed/magic paths and numbers from the codebase and put them into env
 * [x] Profile and make faster (<0.5 seconds ideally)
-* [ ] NLP-based predictions
+* [x] NLP-based predictions -- first attempt based on [top2vec](https://github.com/ddangelov/Top2Vec)
 * [ ] gitignore-like ignoring of specific files/patterns
 * [ ] Make obsidiantools ignore case
 * [ ] Handle if linked note is renamed => vault index needs update

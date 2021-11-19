@@ -46,7 +46,8 @@ available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
 vault_path = pathlib.Path(os.getenv("VAULT_PATH"))
-index = vault_index.VaultIndex(vault_path)
+enable_top2vec = os.getenv("ENABLE_TOP2VEC") == "1"
+index = vault_index.VaultIndex(vault_path, enable_top2vec=enable_top2vec)
 
 
 @app.get("/")
@@ -92,6 +93,22 @@ def _features_merged(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
     df = df.merge(geodesic_distances, on="name", how="left")
 
     return df
+
+
+def _similar_top2vec(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
+    q = [query_note.name]
+
+    (
+        _,
+        document_scores,
+        document_ids,
+    ) = index.top2vec_model.search_documents_by_documents(q, 100)
+    rows = [
+        {"name": name, "top2vec_similarity": score}
+        for name, score in zip(document_ids, document_scores)
+    ]
+
+    return pd.DataFrame(rows)
 
 
 def get_items_jaccard_short(feature_df, n_items=5):
@@ -140,6 +157,17 @@ def get_items_jaccard_nonexistent(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
+def get_items_top2vec(top2vec_df, n_items=5):
+    result_df = top2vec_df
+    result_df = result_df[result_df["is_daily"] == False]
+    result_df = result_df[result_df["distance"] >= 2]
+    result_df = result_df.sort_values("top2vec_similarity", ascending=False).head(
+        n_items
+    )
+
+    return _df_to_items(result_df, lambda row: row.top2vec_similarity)
+
+
 def title_item(title: str) -> dict:
     return {"name": f"🟦 {title} 🟦"}
 
@@ -179,5 +207,12 @@ def related(request: ObsidianPyLabRequest):
 
     items.append(title_item("Nonexistent"))
     items += get_items_jaccard_nonexistent(feature_df)
+
+    if index.enable_top2vec and query_note.name in index.top2vec_model.document_ids:
+        top2vec_df = _similar_top2vec(query_note, index).merge(
+            feature_df, on="name", how="left"
+        )
+        items.append(title_item("Top2Vec"))
+        items += get_items_top2vec(top2vec_df, n_items=10)
 
     return {"contents": items}
