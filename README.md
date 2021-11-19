@@ -23,7 +23,7 @@ After the server is running, install and enable the [obsidian-lab](https://githu
 I recommend enabling the trigger "triggers when opening a file" so the predictions are automatically made every time you open a note, so you don't have to manually call the function.
 
 ### Performance
-Predictions for a file take 1-2 seconds per query on my vault with ~500 notes, on a 2015 i7 Macbook Pro.
+Predictions for a file take 50-100 milliseconds per query on my vault with ~500 notes, on a 2015 i7 Macbook Pro.
 
 ### Contribution
 This project is in a very early stage and I might make massively breaking changes at any time. Let's discuss in Github issues if you have feature requests or would like to contribute.
