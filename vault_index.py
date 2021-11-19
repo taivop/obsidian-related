@@ -6,16 +6,6 @@ import obsidiantools.api as otools
 from note import Note
 
 
-def load_vault(vault_path: pathlib.Path):
-    vault = otools.Vault(pathlib.Path(vault_path)).connect()
-    notes = [
-        Note.from_path(name, vault_path / p) for name, p in vault.file_index.items()
-    ]
-    print(f"{len(notes)} notes in vault")
-
-    return vault, notes
-
-
 class VaultIndex:
     vault = None
     notes = None
