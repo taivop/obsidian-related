@@ -78,6 +78,8 @@ class VaultIndex:
         self.top2vec_model = Top2Vec(
             plaintexts,
             embedding_model="universal-sentence-encoder",
+            use_embedding_model_tokenizer=True,
+            keep_documents=False,
             document_ids=names,
             min_count=3,
             hdbscan_args=hdbscan_args,
