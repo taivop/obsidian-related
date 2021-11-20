@@ -99,7 +99,6 @@ def _similar_top2vec(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
     q = [query_note.name]
 
     (
-        _,
         document_scores,
         document_ids,
     ) = index.top2vec_model.search_documents_by_documents(q, 100)
