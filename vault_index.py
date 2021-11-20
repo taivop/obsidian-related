@@ -65,6 +65,9 @@ class VaultIndex:
 
     def index_top2vec(self):
         """Train top2vec word, document, and topic embeddings."""
+        # Import here so that we don't have to install top2vec if it's not used
+        from top2vec import Top2Vec
+
         notes = {
             name: note
             for (name, note) in self.notes.items()
