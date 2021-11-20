@@ -182,7 +182,7 @@ def get_note_by_name(name: str) -> obsfeatures.Note:
 
 @app.post("/reindex")
 def reindex(request: ObsidianPyLabRequest):
-    index.load()
+    index.load(reindex_top2vec=True)
     return {"status": "ok"}
 
 
