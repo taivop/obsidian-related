@@ -4,7 +4,6 @@ import pathlib
 from typing import Optional
 
 import numpy as np
-import obsidiantools.api as otools
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI

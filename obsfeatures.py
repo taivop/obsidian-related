@@ -82,16 +82,3 @@ def jaccard_coefficients(note: Note, index: vault_index.VaultIndex) -> pd.DataFr
             rows.append({"name": n1, "jaccard": jaccard})
 
     return pd.DataFrame(rows)
-
-
-# === Function of graph, but not note ===
-def pagerank_centralities(graph: nx.Graph) -> pd.DataFrame:
-    """Get pagerank centralities for all notes."""
-    pr = nx.pagerank(graph)
-
-    rows = []
-
-    for name in graph.nodes:
-        rows.append({"name": name, "pagerank": pr[name]})
-
-    return pd.DataFrame(rows)
