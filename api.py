@@ -1,7 +1,7 @@
 import logging
 import os
 import pathlib
-from typing import Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -44,18 +44,13 @@ add_timing_middleware(app, record=logger.info, prefix="app", exclude="untimed")
 available_fns = ["related", "reindex"]
 
 # Read vault and notes into memory
-vault_path = pathlib.Path(os.getenv("VAULT_PATH"))
+vault_path = pathlib.Path(os.getenv("VAULT_PATH") or ".")
 enable_top2vec = os.getenv("ENABLE_TOP2VEC") == "1"
 index = vault_index.VaultIndex(vault_path, enable_top2vec=enable_top2vec)
 
 
-@app.get("/")
-def read_root():
-    return {"scripts": [f"http://127.0.0.1:5000/function/{fn}" for fn in available_fns]}
-
-
-def _row_to_dict(row):
-    res = {}
+def _row_to_dict(row: pd.Series) -> dict:
+    res: Dict[str, Any] = dict()
     for k, v in row.items():
         if k == "name":
             continue
@@ -67,7 +62,9 @@ def _row_to_dict(row):
     return res
 
 
-def _df_to_items(df: pd.DataFrame, score_getter):
+def _df_to_items(
+    df: pd.DataFrame, score_getter: Callable[[pd.Series], float]
+) -> List[Dict]:
     items = []
 
     for _, row in df.iterrows():
@@ -82,32 +79,7 @@ def _df_to_items(df: pd.DataFrame, score_getter):
     return items
 
 
-def _features_merged(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
-    jaccard_df = features.jaccard_coefficients(query_note, index)
-    note_individual_features = features.get_notes_individual_df(index)
-    geodesic_distances = features.geodesic_distances(query_note, index.graph_undirected)
-    df = jaccard_df.merge(note_individual_features, on="name", how="left")
-    df = df.merge(geodesic_distances, on="name", how="left")
-
-    return df
-
-
-def _similar_top2vec(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
-    q = [query_note.name]
-
-    (
-        document_scores,
-        document_ids,
-    ) = index.top2vec_model.search_documents_by_documents(q, 100)
-    rows = [
-        {"name": name, "top2vec_similarity": score}
-        for name, score in zip(document_ids, document_scores)
-    ]
-
-    return pd.DataFrame(rows)
-
-
-def get_items_jaccard_short(feature_df, n_items=5):
+def get_items_jaccard_short(feature_df: pd.DataFrame, n_items: int = 5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] <= 2]
@@ -119,7 +91,7 @@ def get_items_jaccard_short(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
-def get_items_jaccard_long(feature_df, n_items=5):
+def get_items_jaccard_long(feature_df: pd.DataFrame, n_items: int = 5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["name_n_words"] > 2]
@@ -131,7 +103,7 @@ def get_items_jaccard_long(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
-def get_items_jaccard_daily(feature_df, n_items=5):
+def get_items_jaccard_daily(feature_df: pd.DataFrame, n_items: int = 5):
     result_df = feature_df
     result_df = result_df[result_df["is_daily"] == True]
     result_df = result_df[result_df["distance"] >= 2]
@@ -141,7 +113,7 @@ def get_items_jaccard_daily(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
-def get_items_jaccard_nonexistent(feature_df, n_items=5):
+def get_items_jaccard_nonexistent(feature_df: pd.DataFrame, n_items: int = 5):
     result_df = feature_df
     result_df = result_df[
         np.logical_or(result_df["exists"] != True, result_df["plaintext_n_words"] < 10)
@@ -153,7 +125,7 @@ def get_items_jaccard_nonexistent(feature_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.jaccard)
 
 
-def get_items_top2vec(top2vec_df, n_items=5):
+def get_items_top2vec(top2vec_df: pd.DataFrame, n_items: int = 5):
     result_df = top2vec_df
     result_df = result_df[result_df["is_daily"] == False]
     result_df = result_df[result_df["distance"] >= 2]
@@ -164,16 +136,21 @@ def get_items_top2vec(top2vec_df, n_items=5):
     return _df_to_items(result_df, lambda row: row.top2vec_similarity)
 
 
-def title_item(title: str) -> dict:
+def make_title_item(title: str) -> dict:
     return {"name": f"🟦 {title} 🟦"}
 
 
 def get_note_by_name(name: str) -> features.Note:
     if name not in index.notes:
-        # Try reloading vault
+        # Try reloading vault in case note was just created
         index.load()
 
     return index.notes[name]
+
+
+@app.get("/")
+def read_root():
+    return {"scripts": [f"http://127.0.0.1:5000/function/{fn}" for fn in available_fns]}
 
 
 @app.post("/reindex")
@@ -190,25 +167,25 @@ def related(request: ObsidianPyLabRequest):
 
     items = []
 
-    feature_df = _features_merged(query_note, index)
+    feature_df = features.base_features(query_note, index)
 
-    items.append(title_item("Long"))
+    items.append(make_title_item("Long"))
     items += get_items_jaccard_long(feature_df, n_items=8)
 
-    items.append(title_item("Short"))
+    items.append(make_title_item("Short"))
     items += get_items_jaccard_short(feature_df, n_items=8)
 
-    items.append(title_item("Daily"))
+    items.append(make_title_item("Daily"))
     items += get_items_jaccard_daily(feature_df)
 
-    items.append(title_item("Nonexistent"))
+    items.append(make_title_item("Nonexistent"))
     items += get_items_jaccard_nonexistent(feature_df)
 
     if index.enable_top2vec and query_note.name in index.top2vec_model.document_ids:
-        top2vec_df = _similar_top2vec(query_note, index).merge(
+        top2vec_df = features.top2vec_features(query_note, index).merge(
             feature_df, on="name", how="left"
         )
-        items.append(title_item("Top2Vec"))
+        items.append(make_title_item("Top2Vec"))
         items += get_items_top2vec(top2vec_df, n_items=10)
 
     return {"contents": items}

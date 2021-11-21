@@ -1,6 +1,7 @@
 import os
 import pathlib
 import re
+from typing import Dict
 
 import networkx as nx
 import obsidiantools.api as otools
@@ -22,8 +23,8 @@ def _clean_wikilinks(s: str) -> str:
 
 
 class VaultIndex:
-    vault = None
-    notes = None
+    vault: otools.Vault
+    notes: Dict[str, Note]
     top2vec_model_path = pathlib.Path("data/top2vec_model")
 
     def __init__(self, vault_path: pathlib.Path, enable_top2vec=False):

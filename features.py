@@ -82,3 +82,28 @@ def jaccard_coefficients(note: Note, index: vault_index.VaultIndex) -> pd.DataFr
             rows.append({"name": n1, "jaccard": jaccard})
 
     return pd.DataFrame(rows)
+
+
+def base_features(query_note: Note, index: vault_index.VaultIndex) -> pd.DataFrame:
+    jaccard_df = jaccard_coefficients(query_note, index)
+    note_individual_features = get_notes_individual_df(index)
+    geodesic = geodesic_distances(query_note, index.graph_undirected)
+    df = jaccard_df.merge(note_individual_features, on="name", how="left")
+    df = df.merge(geodesic, on="name", how="left")
+
+    return df
+
+
+def top2vec_features(query_note: Note, index: vault_index.VaultIndex) -> pd.DataFrame:
+    q = [query_note.name]
+
+    (
+        document_scores,
+        document_ids,
+    ) = index.top2vec_model.search_documents_by_documents(q, 100)
+    rows = [
+        {"name": name, "top2vec_similarity": score}
+        for name, score in zip(document_ids, document_scores)
+    ]
+
+    return pd.DataFrame(rows)
