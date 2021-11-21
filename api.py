@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.timing import add_timing_middleware
 from pydantic import BaseModel
 
-import obsfeatures
+import features
 import vault_index
 
 
@@ -83,11 +83,9 @@ def _df_to_items(df: pd.DataFrame, score_getter):
 
 
 def _features_merged(query_note, index: vault_index.VaultIndex) -> pd.DataFrame:
-    jaccard_df = obsfeatures.jaccard_coefficients(query_note, index)
-    note_individual_features = obsfeatures.get_notes_individual_df(index)
-    geodesic_distances = obsfeatures.geodesic_distances(
-        query_note, index.graph_undirected
-    )
+    jaccard_df = features.jaccard_coefficients(query_note, index)
+    note_individual_features = features.get_notes_individual_df(index)
+    geodesic_distances = features.geodesic_distances(query_note, index.graph_undirected)
     df = jaccard_df.merge(note_individual_features, on="name", how="left")
     df = df.merge(geodesic_distances, on="name", how="left")
 
@@ -170,7 +168,7 @@ def title_item(title: str) -> dict:
     return {"name": f"🟦 {title} 🟦"}
 
 
-def get_note_by_name(name: str) -> obsfeatures.Note:
+def get_note_by_name(name: str) -> features.Note:
     if name not in index.notes:
         # Try reloading vault
         index.load()
